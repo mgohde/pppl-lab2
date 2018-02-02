@@ -8,9 +8,9 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
 
   /*
    * CSCI 3155: Lab 2
-   * <Your Name>
+   * Michael Gohde
    * 
-   * Partner: <Your Partner's Name>
+   * Partner: Matt Waymouth
    * Collaborators: <Any Collaborators>
    */
 
@@ -62,6 +62,7 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
     require(isValue(v))
     (v: @unchecked) match {
       case N(n) => n
+      case S(s) => s.toDouble
       case _ => ???
     }
   }
@@ -79,16 +80,91 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
     (v: @unchecked) match {
       case S(s) => s
       case Undefined => "undefined"
-      case _ => ???
+      case N(n) => n.toString()
+      case B(b) => b.toString()
+      case _ => ""
+    }
+  }
+
+  def doMathBin(func: (Double, Double) => Double, e1: Expr, e2: Expr) = {
+    e1 match {
+      case N(n) => e2 match {
+        case N(m) => N(func(n, m))
+        case _ => Undefined
+      }
+
+      case _ => Undefined
     }
   }
 
   def eval(env: Env, e: Expr): Expr = {
     e match {
       /* Base Cases */
+      case N(n) => e
+      case S(s) => e
+      case B(b) => e
+      case Undefined => Undefined
 
       /* Inductive Cases */
       case Print(e1) => println(pretty(eval(env, e1))); Undefined
+      case Unary(uop, e1) => uop match {
+        case Not => eval(env, e1) match
+          {
+          case B(b) => B(!b)
+          case _ => Undefined
+          }
+        case Neg => eval(env, e1) match
+          {
+          case N(n) => N(-n)
+          case _ => Undefined
+          }
+      }
+
+      case Binary(bop, e1, e2) => bop match
+      {
+        case Plus => {
+          val ee1=eval(e1)
+          val ee2=eval(e2)
+
+          doMathBin((a: Double, b: Double) => a+b, ee1, ee2)
+        }
+
+        case Minus => {
+          val ee1=eval(e1)
+          val ee2=eval(e2)
+
+          doMathBin((a: Double, b:Double) => a-b, ee1, ee2)
+        }
+
+        case Times => {
+          val ee1=eval(e1)
+          val ee2=eval(e2)
+
+          doMathBin((a: Double, b: Double) => a*b, ee1, ee2)
+        }
+
+        case Div => {
+          val ee1=eval(e1)
+          val ee2=eval(e2)
+
+          doMathBin((a: Double, b:Double) => a/b, ee1, ee2)
+        }
+        case Eq => ???
+        case Ne => ???
+        case Lt => ???
+        case Le => ???
+        case Gt => ???
+        case Ge => ???
+        case And => ???
+        case Or => ???
+        case Seq => ???
+      }
+
+      case If(e1, e2, e3) => eval(e1) match
+        {
+        case B(b) => if(b) eval(env, e2) else eval(env, e3)
+        case _ => Undefined
+      }
 
       case _ => ???
     }
