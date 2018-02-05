@@ -63,7 +63,9 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
     (v: @unchecked) match {
       case N(n) => n
       case S(s) => s.toDouble
-      case _ => ???
+      case B(b) => if(b) 1.0 else 0.0
+        //Anything with any op on undefined returns NaN in JS, IIRC.
+      case Undefined => Double.NaN
     }
   }
 
@@ -71,6 +73,9 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
     require(isValue(v))
     (v: @unchecked) match {
       case B(b) => b
+        // As specified in the W3C javascript documentation, anything without a "value" is false.
+      case N(n) => n != 0 && n != -0
+      case S(s) => s.length()!=0
       case _ => ???
     }
   }
@@ -86,14 +91,62 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
     }
   }
 
-  def doMathBin(func: (Double, Double) => Double, e1: Expr, e2: Expr) = {
-    e1 match {
-      case N(n) => e2 match {
-        case N(m) => N(func(n, m))
-        case _ => Undefined
-      }
+  def doMathBin(func: (Double, Double) => Double, e1: Expr, e2: Expr): Expr = {
+    val d1=toNumber(e1)
+    val d2=toNumber(e2)
 
-      case _ => Undefined
+    N(func(d1, d2))
+  }
+
+  def doBinAnd(e1: Expr, e2: Expr): Expr = {
+    val b1=toBoolean(e1)
+    val b2=toBoolean(e2)
+
+    //Fun fact: In JavaScript, if two numbers are anded together and are both not equal to 0, the last
+    //value is returned. So, if x=5 and y=10, x&&y==10
+    //For logical or, the first value is returned:
+    //x||y==5
+
+    if(e1.isInstanceOf[N] && e2.isInstanceOf[N]) {
+      if(b1 && b2) e2 else if(!b1) e1 else if (!b2) e2 else B(false)
+    } else if(e1.isInstanceOf[N]) {
+      if(b1 && b2) e1 else if(!b1) e1 else B(false)
+    } else if(e2.isInstanceOf[N]) {
+      if(b1 && b2) e2 else if(!b2) e2 else B(false)
+    } else {
+      B(b1 && b2)
+    }
+  }
+
+  def doBinOr(e1: Expr, e2: Expr): Expr = {
+    val b1=toBoolean(e1)
+    val b2=toBoolean(e2)
+
+    //Fun fact: In JavaScript, if two numbers are anded together and are both not equal to 0, the last
+    //value is returned. So, if x=5 and y=10, x&&y==10
+    //For logical or, the first value is returned:
+    //x||y==5
+
+    if(e1.isInstanceOf[N] && e2.isInstanceOf[N]) {
+      if(b1 || b2) e2 else B(false)
+    } else if(e1.isInstanceOf[N]) {
+      if(b1 || b2) e1 else if(!b1) e1 else B(false)
+    } else if(e2.isInstanceOf[N]) {
+      if(b1 || b2) e2 else if(!b2) e2 else B(false)
+    } else {
+      B(b1 || b2)
+    }
+  }
+
+  def doCmpBin(func: (Double, Double) =>  Boolean, e1: Expr, e2: Expr): Boolean = {
+    try
+    {
+      val d1=toNumber(e1)
+      val d2=toNumber(e2)
+
+      func(d1, d2)
+    } catch {
+      case e: NumberFormatException => false
     }
   }
 
@@ -149,14 +202,14 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
 
           doMathBin((a: Double, b:Double) => a/b, ee1, ee2)
         }
-        case Eq => ???
-        case Ne => ???
-        case Lt => ???
-        case Le => ???
-        case Gt => ???
-        case Ge => ???
-        case And => ???
-        case Or => ???
+        case Eq => B(doCmpBin((a: Double, b: Double) => (a == b), eval(env, e1), eval(env, e2)))
+        case Ne => B(doCmpBin((a: Double, b: Double) => (a != b), eval(env, e1), eval(env, e2)))
+        case Lt => B(doCmpBin((a: Double, b: Double) => (a < b), eval(env, e1), eval(env, e2)))
+        case Le => B(doCmpBin((a: Double, b: Double) => (a <= b), eval(env, e1), eval(env, e2)))
+        case Gt => B(doCmpBin((a: Double, b: Double) => (a > b), eval(env, e1), eval(env, e2)))
+        case Ge => B(doCmpBin((a: Double, b: Double) => (a >= b), eval(env, e1), eval(env, e2)))
+        case And => doBinAnd(eval(env, e1), eval(env, e2))
+        case Or => doBinOr(eval(env, e1), eval(env, e2))
         case Seq => ???
       }
 
