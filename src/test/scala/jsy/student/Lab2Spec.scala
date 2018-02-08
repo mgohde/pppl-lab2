@@ -204,7 +204,12 @@ class Lab2Spec(lab2: Lab2Like) extends FlatSpec {
     val e2 = Binary(Plus, Var("x"), N(1))
     val e3 = eval(ConstDecl("x", e1, e2)) 
     assert(e3 === N(4))
-  } 
+  }
+
+  "If" should "generally goddamn work" in {
+    val expr=eval(If(N(1), N(2), N(3)))
+    assert(expr===N(2))
+  }
   
   "If" should "eval the first expression if the conditional is true" in {
     val e1 = Binary(Plus, N(3), N(2))

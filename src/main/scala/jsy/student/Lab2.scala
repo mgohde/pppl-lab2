@@ -1,5 +1,7 @@
 package jsy.student
 
+import java.util.NoSuchElementException
+
 import jsy.lab2.Lab2Like
 
 object Lab2 extends jsy.util.JsyApplication with Lab2Like {
@@ -74,9 +76,10 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
     (v: @unchecked) match {
       case B(b) => b
         // As specified in the W3C javascript documentation, anything without a "value" is false.
-      case N(n) => n != 0 && n != -0
+      case N(n) => n != 0 && n != -0 && n!=Double.NaN
       case S(s) => s.length()!=0
-      case _ => ???
+        //Undefined values are "false"
+      case _ => false
     }
   }
 
@@ -176,32 +179,33 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
       case Binary(bop, e1, e2) => bop match
       {
         case Plus => {
-          val ee1=eval(e1)
-          val ee2=eval(e2)
+          val ee1=eval(env, e1)
+          val ee2=eval(env, e2)
 
           doMathBin((a: Double, b: Double) => a+b, ee1, ee2)
         }
 
         case Minus => {
-          val ee1=eval(e1)
-          val ee2=eval(e2)
+          val ee1=eval(env, e1)
+          val ee2=eval(env, e2)
 
           doMathBin((a: Double, b:Double) => a-b, ee1, ee2)
         }
 
         case Times => {
-          val ee1=eval(e1)
-          val ee2=eval(e2)
+          val ee1=eval(env, e1)
+          val ee2=eval(env, e2)
 
           doMathBin((a: Double, b: Double) => a*b, ee1, ee2)
         }
 
         case Div => {
-          val ee1=eval(e1)
-          val ee2=eval(e2)
+          val ee1=eval(env, e1)
+          val ee2=eval(env, e2)
 
           doMathBin((a: Double, b:Double) => a/b, ee1, ee2)
         }
+
         case Eq => B(doCmpBin((a: Double, b: Double) => (a == b), eval(env, e1), eval(env, e2)))
         case Ne => B(doCmpBin((a: Double, b: Double) => (a != b), eval(env, e1), eval(env, e2)))
         case Lt => B(doCmpBin((a: Double, b: Double) => (a < b), eval(env, e1), eval(env, e2)))
@@ -210,16 +214,25 @@ object Lab2 extends jsy.util.JsyApplication with Lab2Like {
         case Ge => B(doCmpBin((a: Double, b: Double) => (a >= b), eval(env, e1), eval(env, e2)))
         case And => doBinAnd(eval(env, e1), eval(env, e2))
         case Or => doBinOr(eval(env, e1), eval(env, e2))
-        case Seq => ???
-      }
 
-      case If(e1, e2, e3) => eval(e1) match
-        {
-        case B(b) => if(b) eval(env, e2) else eval(env, e3)
+        case Seq => {eval(env, e1)
+          eval(env, e2)}
+
         case _ => Undefined
       }
 
-      case _ => ???
+      case If(e1, e2, e3) => {
+        print(toBoolean(eval(env, e1)))
+        if(toBoolean(eval(env, e1))) eval(env, e2) else eval(env, e3)
+      }
+
+      case ConstDecl(x, e1, e2) => {
+        val ee1=eval(env, e1)
+        val newEnv=extend(env, x, ee1)
+        eval(newEnv, e2)
+      }
+
+      case Var(x) => try{lookup(env, x)} catch { case ex: NoSuchElementException => Undefined}
     }
   }
 
