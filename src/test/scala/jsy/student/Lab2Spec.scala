@@ -29,6 +29,15 @@ class Lab2Spec(lab2: Lab2Like) extends FlatSpec {
     val e2 = B(true)
     val e3 = eval(Binary(And, e1, e2))
     assert(e3 === N(0))
+
+    // Perform an additional test to see if it passes foward N(0) for a different direction:
+    val e4=eval(Binary(And, e2, e1))
+    assert(e3 === N(0))
+
+    //Check to see if it returns one of the truth values:
+    val e5=N(5)
+    val e6=eval(Binary(And, e5, e2))
+    assert(e6 === N(5))
   }
  
   "Or" should "return true if either or both expressions are true" in {
@@ -45,6 +54,10 @@ class Lab2Spec(lab2: Lab2Like) extends FlatSpec {
     val e2 = B(false)
     val e3 = eval(Binary(Or, e1, e2))
     assert(e3 === N(5))
+
+    //Perform the same directional test:
+    val e4=eval(Binary(Or, e2, e1))
+    assert(e4 === N(5))
   }
   
   "Plus" should "add two number values and return a number" in {
@@ -79,6 +92,13 @@ class Lab2Spec(lab2: Lab2Like) extends FlatSpec {
     val e1 = B(true)
     val e2 = N(7)
     assert(eval(Binary(Plus,e1,e2)) == N(8))
+  }
+
+  it should "automatically convert unintuitive string values like \"5\" into numbers when adding" in {
+    val e1=N(5)
+    val e2=S("10")
+    val e3=eval(Binary(Plus, e1, e2))
+    assert(e3 == N(10))
   }
 
   "Eq" should "return true if two numerical values are the same" in {
